@@ -2,6 +2,9 @@
 
 use std::arch::asm;
 use std::convert::TryFrom;
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::fs::OpenOptions;
 
 pub const MAX_AUTHTAG_LEN: usize = 32;
 
@@ -62,6 +65,151 @@ struct SnpReportData {
     pub chip_id: [u8; 64],
     rsvd3: [u8; 192],
     pub signature: [u8; 512],
+}
+
+impl SnpReportResponseData {
+    pub fn write(&self, file_path: &str) -> std::io::Result<()> {
+        self.report.write(file_path)
+    }
+}
+
+impl SnpReportData {
+    pub fn write(&self, file_path: &str) -> std::io::Result<()> {
+        let mut buffer: [u8; 0x04A0] = [0; 0x04A0];
+        // Size from AMD SEV code:
+        // https://github.com/AMDESE/sev-tool/blob/1575ebcd50d6a475cc6c66ad6eb6536760d37592/src/rmp.h#L309-L337
+        let mut index: usize = 0;
+
+        for val in self.version.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.guest_svn.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.policy.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.family_id {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.image_id {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.vmpl.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.sig_algo.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.plat_version.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.plat_info.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.author_key_en.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.rsvd1.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.report_data {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.measurement {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.host_data {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.id_key_digest {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.author_key_digest {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.report_id {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.report_id_ma {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.reported_tcb.to_be_bytes() {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.rsvd2 {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.chip_id {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.rsvd3 {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        for val in self.signature {
+            buffer[index] = val;
+            index += 1;
+        }
+
+        /*let f = OpenOptions::new()
+            .append(false)
+            .create(true) // Optionally create the file if it doesn't already exist
+            .open(file_path)
+            .expect("Unable to open file for saving SEV attestation data");
+
+        let mut f = BufWriter::new(f);*/
+        match File::create(file_path) {
+            Ok(mut f) => {
+                f.write_all(&buffer).expect("Unable to write SEV attestation data");}
+            Err(e) => {eprintln!("Writing error: {}", e)}
+        }
+
+        Ok(())
+    }
 }
 
 #[repr(u64)]
@@ -181,6 +329,9 @@ fn get_att(mut nonce: [u8; 64]) -> std::io::Result<()> {
     assert_eq!(report.report.version, 2);
 
     eprintln!("report: {:?}", report);
+
+    report.write("sev_report.bin");
+
     Ok(())
 }
 
