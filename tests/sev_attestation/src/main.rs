@@ -2,9 +2,6 @@
 
 use std::arch::asm;
 use std::convert::TryFrom;
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::fs::OpenOptions;
 
 pub const MAX_AUTHTAG_LEN: usize = 32;
 
@@ -68,29 +65,29 @@ struct SnpReportData {
 }
 
 impl SnpReportResponseData {
-    pub fn write(&self, file_path: &str) -> std::io::Result<()> {
-        self.report.write(file_path)
+    pub fn writeToConsole(&self) {
+        self.report.writeToConsole()
     }
 }
 
 impl SnpReportData {
-    pub fn write(&self, file_path: &str) -> std::io::Result<()> {
+    pub fn writeToConsole(&self) {
         let mut buffer: [u8; 0x04A0] = [0; 0x04A0];
         // Size from AMD SEV code:
         // https://github.com/AMDESE/sev-tool/blob/1575ebcd50d6a475cc6c66ad6eb6536760d37592/src/rmp.h#L309-L337
         let mut index: usize = 0;
 
-        for val in self.version.to_be_bytes() {
+        for val in self.version.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.guest_svn.to_be_bytes() {
+        for val in self.guest_svn.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.policy.to_be_bytes() {
+        for val in self.policy.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
@@ -105,32 +102,32 @@ impl SnpReportData {
             index += 1;
         }
 
-        for val in self.vmpl.to_be_bytes() {
+        for val in self.vmpl.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.sig_algo.to_be_bytes() {
+        for val in self.sig_algo.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.plat_version.to_be_bytes() {
+        for val in self.plat_version.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.plat_info.to_be_bytes() {
+        for val in self.plat_info.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.author_key_en.to_be_bytes() {
+        for val in self.author_key_en.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
 
-        for val in self.rsvd1.to_be_bytes() {
+        for val in self.rsvd1.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
@@ -170,7 +167,7 @@ impl SnpReportData {
             index += 1;
         }
 
-        for val in self.reported_tcb.to_be_bytes() {
+        for val in self.reported_tcb.to_le_bytes() {
             buffer[index] = val;
             index += 1;
         }
@@ -195,20 +192,11 @@ impl SnpReportData {
             index += 1;
         }
 
-        /*let f = OpenOptions::new()
-            .append(false)
-            .create(true) // Optionally create the file if it doesn't already exist
-            .open(file_path)
-            .expect("Unable to open file for saving SEV attestation data");
-
-        let mut f = BufWriter::new(f);*/
-        match File::create(file_path) {
-            Ok(mut f) => {
-                f.write_all(&buffer).expect("Unable to write SEV attestation data");}
-            Err(e) => {eprintln!("Writing error: {}", e)}
+        eprintln!("\n\n");
+        for val in buffer {
+            eprint!("{:02X} ",val);
         }
-
-        Ok(())
+        eprintln!("\n\n");
     }
 }
 
@@ -330,7 +318,7 @@ fn get_att(mut nonce: [u8; 64]) -> std::io::Result<()> {
 
     eprintln!("report: {:?}", report);
 
-    report.write("sev_report.bin");
+    report.writeToConsole();
 
     Ok(())
 }
