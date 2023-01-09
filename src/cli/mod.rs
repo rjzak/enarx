@@ -5,7 +5,7 @@ mod deploy;
 #[cfg(enarx_with_shim)]
 mod key;
 mod package;
-mod platform;
+pub(crate) mod platform;
 mod repo;
 mod run;
 #[cfg(enarx_with_shim)]

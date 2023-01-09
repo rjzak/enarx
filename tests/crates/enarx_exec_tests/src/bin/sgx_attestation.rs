@@ -40,10 +40,21 @@ impl TryFrom<u64> for TeeTech {
 }
 
 #[derive(Sequence)]
+pub struct CrlPair<'a> {
+    pub url: String,
+    pub crl: CertificateList<'a>,
+}
+
+#[derive(Sequence)]
+pub struct CachedCrl<'a> {
+    pub crls: Vec<CrlPair<'a>>,
+}
+
+#[derive(Sequence)]
 pub struct SgxEvidence<'a> {
     #[asn1(type = "OCTET STRING")]
     pub quote: &'a [u8],
-    pub crl: Vec<CertificateList<'a>>,
+    pub crl: CachedCrl<'a>,
 }
 
 #[cfg(target_os = "linux")]
@@ -134,9 +145,9 @@ fn main() -> io::Result<()> {
     })?;
 
     assert!(
-        evidence.crl.len() > 1,
+        evidence.crl.crls.len() > 1,
         "ensure CRLs were present, got {}",
-        evidence.crl.len()
+        evidence.crl.crls.len()
     );
 
     let buffer = evidence.quote;

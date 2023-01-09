@@ -126,10 +126,21 @@ impl TryFrom<u64> for TeeTech {
     }
 }
 
+#[derive(Debug, Sequence)]
+pub struct CrlPair<'a> {
+    pub url: String,
+    pub crl: CertificateList<'a>,
+}
+
+#[derive(Debug, Sequence)]
+pub struct CachedCrl<'a> {
+    pub crls: Vec<CrlPair<'a>>,
+}
+
 #[derive(Sequence)]
 struct SnpEvidence<'a> {
     vcek: Document,
-    crl: Vec<CertificateList<'a>>,
+    crl: CachedCrl<'a>,
 }
 
 #[cfg(target_os = "linux")]
@@ -278,7 +289,10 @@ fn get_att(mut nonce: [u8; 64]) -> io::Result<()> {
     );
 
     let evidence = SnpEvidence::from_der(vcek_buf).unwrap();
-    assert!(!evidence.crl.is_empty(), "expected at least one AMD CRL");
+    assert!(
+        !evidence.crl.crls.is_empty(),
+        "expected at least one AMD CRL"
+    );
 
     let vcek_buf = evidence.vcek.as_bytes();
 
@@ -314,7 +328,7 @@ fn get_att(mut nonce: [u8; 64]) -> io::Result<()> {
         hex::encode(report.author_key_digest)
     );
 
-    eprintln!("CRLs: {:?}", evidence.crl);
+    eprintln!("CRLs: {:?}", evidence.crl.crls);
 
     Ok(())
 }

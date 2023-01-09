@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::super::caching::fetch_file;
+use super::super::caching::{fetch_file, CachedCrl, CrlPair};
 use crate::backend::sev::snp::vcek::sev_cache_dir;
 
 use std::fs::OpenOptions;
@@ -35,12 +35,20 @@ impl CrlCache {
             fetch_file(MILAN).context(format!("fetching {MILAN}"))?,
         ];
 
-        let crls = [
-            CertificateList::from_der(&crls[0])?,
-            CertificateList::from_der(&crls[1])?,
-        ];
+        let crl_list = CachedCrl {
+            crls: vec![
+                CrlPair {
+                    url: GENOA.to_string(),
+                    crl: CertificateList::from_der(&crls[0])?,
+                },
+                CrlPair {
+                    url: MILAN.to_string(),
+                    crl: CertificateList::from_der(&crls[1])?,
+                },
+            ],
+        };
 
-        let crls = crls
+        let crls = crl_list
             .to_vec()
             .context("converting AMD CRLs to DER encoding")?;
 

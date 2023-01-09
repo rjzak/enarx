@@ -3,6 +3,7 @@
 use crate::backend::probe::x86_64::{CpuId, Vendor};
 use crate::backend::sgx::{sgx_cache_dir, AESM_SOCKET};
 use crate::backend::Datum;
+use crate::cli::platform::caching::CachedCrl;
 
 use sgx::parameters::{Features, MiscSelect, Xfrm};
 
@@ -12,7 +13,6 @@ use std::path::Path;
 use std::time::SystemTime;
 
 use der::Decode;
-use x509_cert::crl::CertificateList;
 
 fn humanize(mut size: f64) -> (f64, &'static str) {
     let mut iter = 0;
@@ -220,7 +220,7 @@ pub fn intel_crl() -> Datum {
         };
 
     let crls =
-        match Vec::<CertificateList>::from_der(&crls) {
+        match CachedCrl::from_der(&crls) {
             Ok(c) => c,
             Err(e) => return Datum {
                 name,
@@ -231,8 +231,8 @@ pub fn intel_crl() -> Datum {
             },
         };
 
-    for crl in crls.iter() {
-        if let Some(update) = crl.tbs_cert_list.next_update {
+    for crl_pair in crls.crls {
+        if let Some(update) = crl_pair.crl.tbs_cert_list.next_update {
             if update.to_system_time() <= SystemTime::now() {
                 return Datum {
                     name,
