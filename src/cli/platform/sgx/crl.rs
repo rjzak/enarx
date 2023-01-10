@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::super::caching::{fetch_file, CachedCrl, CrlPair};
+use super::super::caching::fetch_crl_list;
 use crate::backend::sgx::sgx_cache_dir;
 
 use std::fs::OpenOptions;
@@ -9,9 +9,6 @@ use std::process::ExitCode;
 
 use anyhow::Context;
 use clap::Args;
-#[allow(unused_imports)]
-use der::{Decode, Encode};
-use x509_cert::crl::CertificateList;
 #[allow(unused_imports)]
 use x509_cert::der::Decode as _; // required for Musl target
 #[allow(unused_imports)]
@@ -33,33 +30,7 @@ impl CrlCache {
         let mut dest_file = sgx_cache_dir()?;
         dest_file.push("crls.der");
 
-        let ca_crl_bytes = fetch_file(CERT_CRL).context(format!("fetching {CERT_CRL}"))?;
-        let platform_crl_bytes =
-            fetch_file(PLATFORM_CRL).context(format!("fetching {PLATFORM_CRL}"))?;
-        let processor_crl_bytes =
-            fetch_file(PROCESSOR_CRL).context(format!("fetching {PROCESSOR_CRL}"))?;
-
-        let crl_list = CachedCrl {
-            crls: vec![
-                CrlPair {
-                    url: CERT_CRL.to_string(),
-                    crl: CertificateList::from_der(&ca_crl_bytes)?,
-                },
-                CrlPair {
-                    url: PROCESSOR_CRL.to_string(),
-                    crl: CertificateList::from_der(&processor_crl_bytes)?,
-                },
-                CrlPair {
-                    url: PLATFORM_CRL.to_string(),
-                    crl: CertificateList::from_der(&platform_crl_bytes)?,
-                },
-            ],
-        };
-
-        let crls = crl_list
-            .to_vec()
-            .context("converting Intel CRLs to DER encoding")?;
-
+        let crls = fetch_crl_list([CERT_CRL.into(), PROCESSOR_CRL.into(), PLATFORM_CRL.into()])?;
         OpenOptions::new()
             .create(true)
             .write(true)

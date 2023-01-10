@@ -4,7 +4,7 @@ pub use crate::backend::kvm::data::{dev_kvm, kvm_version};
 
 use crate::backend::probe::x86_64::{CpuId, Vendor};
 use crate::backend::Datum;
-use crate::cli::platform::caching::CachedCrl;
+use crate::cli::platform::caching::CrlList;
 
 use crate::backend::sev::snp::vcek::{
     get_crl_reader_with_path, get_vcek_reader_with_path, sev_cache_dir,
@@ -36,15 +36,15 @@ pub fn has_crl_cache() -> Result<Datum, Datum> {
         mesg: Some(UPDATE_MSG.to_string()),
     })?;
 
-    let crls = CachedCrl::from_der(&crls).map_err(|e| Datum {
+    let crls = CrlList::from_der(&crls).map_err(|e| Datum {
         name: NAME.to_string(),
         pass: false,
         info: Some(e.to_string()),
         mesg: Some(UPDATE_MSG.to_string()),
     })?;
 
-    for crl_pair in crls.crls {
-        if let Some(update) = crl_pair.crl.tbs_cert_list.next_update {
+    for (_, crl) in crls.entries() {
+        if let Some(update) = crl.tbs_cert_list.next_update {
             if update.to_system_time() <= SystemTime::now() {
                 return Err(Datum {
                     name: NAME.to_string(),

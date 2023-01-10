@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::super::caching::{fetch_file, CachedCrl, CrlPair};
+use super::super::caching::fetch_crl_list;
 use crate::backend::sev::snp::vcek::sev_cache_dir;
 
 use std::fs::OpenOptions;
@@ -9,9 +9,6 @@ use std::process::ExitCode;
 
 use anyhow::Context;
 use clap::Args;
-#[allow(unused_imports)]
-use der::{Decode, Encode};
-use x509_cert::crl::CertificateList;
 #[allow(unused_imports)]
 use x509_cert::der::Decode as _; // required for Musl target
 #[allow(unused_imports)]
@@ -30,28 +27,7 @@ impl CrlCache {
         let mut dest_file = sev_cache_dir()?;
         dest_file.push("crls.der");
 
-        let crls = [
-            fetch_file(GENOA).context(format!("fetching {GENOA}"))?,
-            fetch_file(MILAN).context(format!("fetching {MILAN}"))?,
-        ];
-
-        let crl_list = CachedCrl {
-            crls: vec![
-                CrlPair {
-                    url: GENOA.to_string(),
-                    crl: CertificateList::from_der(&crls[0])?,
-                },
-                CrlPair {
-                    url: MILAN.to_string(),
-                    crl: CertificateList::from_der(&crls[1])?,
-                },
-            ],
-        };
-
-        let crls = crl_list
-            .to_vec()
-            .context("converting AMD CRLs to DER encoding")?;
-
+        let crls = fetch_crl_list([GENOA.into(), MILAN.into()])?;
         OpenOptions::new()
             .create(true)
             .write(true)
