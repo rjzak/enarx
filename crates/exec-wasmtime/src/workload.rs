@@ -108,7 +108,8 @@ fn get_package(root: Entity<'_, impl Scope, scope::Node>, dir: TreeDirectory) ->
         "`{}` metadata does not match directory entry metadata",
         *PACKAGE_CONFIG,
     );
-    let config = toml::from_slice(&config).context("failed to parse config")?;
+    let config = String::from_utf8(config)?;
+    let config = toml::from_str(&config).context("failed to parse config")?;
     Ok(Workload {
         webasm,
         config: Some(config),
@@ -217,13 +218,14 @@ impl TryFrom<Package> for Workload {
                     let mut config = vec![];
                     conf.read_to_end(&mut config)
                         .context("failed to read config")?;
-                    let config = toml::from_slice(&config).context("failed to parse config")?;
+                    let config = String::from_utf8(config)?;
+                    let config = toml::from_str(&config).context("failed to parse config")?;
                     Some(config)
                 } else {
                     None
                 };
                 Ok(Workload { webasm, config })
-            }
+            } //_ => Err(anyhow::anyhow!("unexpected package type")),
         }
     }
 }

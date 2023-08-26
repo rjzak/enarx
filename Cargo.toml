@@ -158,7 +158,7 @@ const-default = { version = "1.0.0", default-features = false }
 const-oid = { version = "0.9.0", default-features = false }
 crt0stack = { version = "0.1.0", default-features = false }
 der = { version = "0.6.1", features = ["std"], default-features = false }
-dirs = { version = "4.0.0", default-features = false }
+dirs = { version = "5.0.1", default-features = false }
 drawbridge-client = { version = "0.2.2", default-features = false }
 drawbridge-server = { version = "0.2.2", default-features = false }
 enarx-exec-wasmtime = { version = "0.7.1", path = "crates/exec-wasmtime", default-features = false }
@@ -214,7 +214,7 @@ spin = { version = "0.9.8", default-features = false, features = ["lock_api", "s
 static_assertions = { version = "1.1.0", default-features = false }
 tempfile = { version = "3.5.0", default-features = false }
 testaso = { version = "0.1.0", default-features = false }
-toml = { version = "0.5.9", default-features = false }
+toml = { version = "0.7.6", features = ["display", "parse"], default-features = false }
 tracing = { version = "0.1.36", features = ["attributes"], default-features = false }
 tracing-flame = { version = "0.2.0", default-features = false }
 tracing-subscriber = { version = "0.3.15", features = ["env-filter", "fmt"], default-features = false }
@@ -222,7 +222,7 @@ ureq = { version = "2.4.0", default-features = false }
 url = { version = "2.2.2", default-features = false }
 vdso = { version = "0.2.2", default-features = false }
 wat = { version = "1.0.0", default-features = false }
-webpki-roots = { version = "0.22.2", default-features = false }
+webpki-roots = { version = "0.25.2", default-features = false }
 x509-cert = { version = "0.1.0", features = ["std"], default-features = false }
 x86_64 = { version = "0.14.9", default-features = false }
 xsave = { version = "2.0.2", default-features = false }
